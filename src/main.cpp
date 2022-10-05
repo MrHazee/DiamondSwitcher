@@ -51,7 +51,7 @@ These values can be changed in order to evaluate the functions
 */
 #define SAMPLES 2048            // This value MUST ALWAYS be a power of 2
 #define SAMPLING_FREQUENCY 8000 // Hz, must be less than 10000 due to ADC
-#define MAP_RES 8
+#define MAP_RES 16
 #define NR_OF_OCTAVES 1
 #define nrOfBims 1
 #define SIGNAL_THR 300
@@ -148,6 +148,7 @@ void ISRA4()
 
 void setup()
 {
+
   analogReadResolution(12); // Sets ADC resolution to 12 bits intead of 10 bits
   analogWriteResolution(12);
   // set pins for interrupt
@@ -174,6 +175,17 @@ void setup()
   pinMode(PERFECT, OUTPUT);
   pinMode(TOO_HIGH, OUTPUT);
   pinMode(VERY_HIGH, OUTPUT);
+  
+  digitalWrite(VERY_LOW, HIGH);
+  delay(100);
+  digitalWrite(TOO_LOW, HIGH);
+  delay(100);
+  digitalWrite(PERFECT, HIGH);
+  delay(100);
+  digitalWrite(TOO_HIGH, HIGH);
+  delay(100);
+  digitalWrite(VERY_HIGH, HIGH);
+  
 
   pinMode(MUTE_LED, OUTPUT);
   pinMode(INPUT_A_LED, OUTPUT);
@@ -293,7 +305,7 @@ double FindDominantFrequency()
     peak = 0.0;
   }
 
-  return (peak * 0.995);
+  return (peak *0.995); //0.995 original
 }
 
 void DisplayNoteAndBar(double frequency)
@@ -387,15 +399,15 @@ void DetectClosestNote(double frequency, int *arr)
 
     for (int j = 1; j < NR_OF_OCTAVES + 1; j++)
     {
-      double note = (notes[i]);
-      double lowDiff = 3;  //((notes[i] - notes[i - 1]) / 2);
-      double highDiff = 3; //((notes[i + 1] - notes[i]) / 2);
+      double note = (notes[i][0] + notes[i][1]);
+      double lowDiff = ((notes[i][0] - notes[i - 1][0]) / 2);
+      double highDiff = ((notes[i + 1][0] - notes[i][0]) / 2);
 
       if (InRange(frequency, note - lowDiff, note + highDiff))
       {
         arr[0] = i;
         note = note;
-        double mapping = mapDouble(frequency, note - lowDiff, note + highDiff, 1, MAP_RES);
+        double mapping = mapDouble(frequency, note  - (lowDiff+notes[i][1]), note + (highDiff+ notes[i][1]), 0, MAP_RES);
         arr[1] = mapping;
         break;
       }
@@ -470,7 +482,13 @@ int mapDouble(double x, double in_min, double in_max, double out_min, double out
 {
   int result;
   result = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-  return result;
+
+  if ((result > 7.8)) {
+    return floor(result); 
+    } else  {//////!!!!!!
+      if (result < 7.7)
+return result;
+    }
 }
 
 void startSequence()
